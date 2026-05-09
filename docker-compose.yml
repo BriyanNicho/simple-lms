@@ -1,15 +1,15 @@
+version: '3.9'
 services:
   django:
     container_name: simple_lms
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: sh -c "python /code/wait_for_db.py && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./code:/code
     ports:
       - "8001:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
 
   postgres:
     image: postgres:latest

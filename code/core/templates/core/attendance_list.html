@@ -1,0 +1,97 @@
+{% extends 'core/base.html' %}
+{% block title %}Presensi: {{ course.name }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'learn_course' course.id %}" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">
+    <i class="fa-solid fa-arrow-left"></i> Kembali ke Materi
+</a>
+
+<div class="glass-panel" style="padding: 2rem; max-width: 900px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <h1 style="margin-bottom: 0.5rem; font-size: 2rem;">Presensi Kehadiran</h1>
+        <p style="color: var(--text-muted); margin: 0;">Mata Kuliah: {{ course.name }}</p>
+    </div>
+
+    {% if is_teacher %}
+    <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--card-border); text-align: center; margin-bottom: 2rem;">
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Anda login sebagai Pengajar/Admin.</p>
+        <a href="{% url 'admin:core_attendancesession_changelist' %}?course__id__exact={{ course.id }}" target="_blank" class="btn-primary" style="display: inline-block; border: none; padding: 0.6rem 1.5rem; border-radius: 8px;">
+            <i class="fa-solid fa-calendar-plus"></i> Kelola Sesi Presensi
+        </a>
+    </div>
+    
+    <div style="display: grid; gap: 1rem;">
+        {% for session in sessions %}
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin-bottom: 0.5rem; color: var(--accent);">{{ session.title }}</h3>
+                <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">
+                    <i class="fa-regular fa-calendar"></i> {{ session.date|date:"d M Y" }} &nbsp;
+                    <i class="fa-regular fa-clock"></i> {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+                </p>
+            </div>
+            <a href="{% url 'attendance_detail' session.id %}" class="btn-outline" style="padding: 0.5rem 1rem;">
+                Lihat Rekap
+            </a>
+        </div>
+        {% empty %}
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Belum ada sesi presensi yang dibuat.</div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    
+    <div style="display: grid; gap: 1.5rem;">
+        {% for item in records %}
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin-bottom: 0.5rem; color: #fff;">{{ item.session.title }}</h3>
+                    <p style="color: var(--text-muted); margin: 0; font-size: 0.9rem;">
+                        <i class="fa-regular fa-calendar"></i> {{ item.session.date|date:"d M Y" }} &nbsp;
+                        <i class="fa-regular fa-clock"></i> {{ item.session.start_time|time:"H:i" }} - {{ item.session.end_time|time:"H:i" }}
+                    </p>
+                </div>
+                <div>
+                    {% if item.record %}
+                        <span class="badge" style="background: #28a745; color: white; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.9rem;">
+                            <i class="fa-solid fa-check"></i> {{ item.record.get_status_display }}
+                        </span>
+                    {% else %}
+                        <span class="badge" style="background: #dc3545; color: white; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.9rem;">
+                            <i class="fa-solid fa-xmark"></i> Belum Hadir
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if not item.record %}
+                {% if item.is_active %}
+                <form action="{% url 'attendance_mark' item.session.id %}" method="post">
+                    {% csrf_field %}
+                    <button type="submit" class="btn-primary" style="width: 100%; border: none; padding: 1rem; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer;">
+                        Klik untuk Presensi Hadir
+                    </button>
+                </form>
+                {% else %}
+                <button disabled class="btn-outline" style="width: 100%; border-color: rgba(255,255,255,0.1); color: var(--text-muted); cursor: not-allowed; padding: 1rem; border-radius: 8px;">
+                    Sesi Presensi Belum Dimulai atau Telah Berakhir
+                </button>
+                {% endif %}
+            {% else %}
+                <div style="background: rgba(40,167,69,0.1); padding: 1rem; border-radius: 8px; text-align: center; color: #28a745; font-size: 0.9rem;">
+                    Anda telah melakukan presensi pada {{ item.record.timestamp|date:"d M Y, H:i:s" }}
+                </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div style="text-align: center; color: var(--text-muted); padding: 3rem;">
+            <i class="fa-solid fa-calendar-xmark" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+            <p>Belum ada sesi presensi untuk mata kuliah ini.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% endif %}
+</div>
+{% endblock %}

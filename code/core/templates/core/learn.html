@@ -1,0 +1,131 @@
+{% extends 'core/base.html' %}
+{% block title %}Belajar: {{ course.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .learn-layout { display: flex; gap: 2rem; }
+    .sidebar-materi { width: 300px; flex-shrink: 0; }
+    .main-materi { flex: 1; }
+    
+    .materi-list { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; overflow: hidden; backdrop-filter: blur(16px); }
+    .materi-item { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
+    .materi-item:last-child { border-bottom: none; }
+    .materi-item:hover, .materi-item.active { background: rgba(255,255,255,0.05); color: #fff; }
+    .materi-item.active i { color: var(--accent); }
+    
+    .video-container { background: #000; border-radius: 16px; overflow: hidden; aspect-ratio: 16/9; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; position: relative; }
+    .video-placeholder { text-align: center; color: var(--text-muted); }
+    
+    .materi-header { margin-bottom: 2rem; }
+    .materi-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .materi-desc { color: var(--text-muted); line-height: 1.6; }
+    
+    @media (max-width: 900px) {
+        .learn-layout { flex-direction: column; }
+        .sidebar-materi { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'my_courses' %}" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard</a>
+
+<div class="learn-layout">
+    <div class="main-materi">
+        {% if contents %}
+        <div class="video-container">
+            <!-- Asumsi video_url bisa diembed, atau hanya placeholder -->
+            <div class="video-placeholder">
+                <i class="fa-regular fa-circle-play" style="font-size: 5rem; margin-bottom: 1rem; color: rgba(255,255,255,0.2);"></i>
+                <p>Simulasi Video Player<br><small>(Fitur streaming dapat diintegrasikan di sini)</small></p>
+            </div>
+        </div>
+        
+        <div class="materi-header">
+            <h1>{{ contents.0.name }}</h1>
+            <div class="materi-desc">
+                {{ contents.0.description|linebreaks }}
+            </div>
+            
+            {% if contents.0.file_attachment %}
+            <div style="margin-top: 1.5rem;">
+                <a href="#" class="btn-outline"><i class="fa-solid fa-download"></i> Unduh Lampiran</a>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% else %}
+        <div class="glass-panel" style="text-align: center; padding: 3rem;">
+            <i class="fa-solid fa-person-digging" style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-muted);"></i>
+            <h3>Materi Belum Tersedia</h3>
+            <p style="color: var(--text-muted);">Pengajar sedang menyiapkan materi untuk kursus ini.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="sidebar-materi">
+        <div style="margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.8rem;">
+            <a href="{% url 'forum_list' course.id %}" class="btn-primary" style="display: block; width: 100%; text-align: center; text-decoration: none; padding: 1rem; border-radius: 8px; font-weight: bold;">
+                <i class="fa-regular fa-comments"></i> Forum Diskusi
+            </a>
+            <a href="{% url 'attendance_list' course.id %}" class="btn-outline" style="display: block; width: 100%; text-align: center; text-decoration: none; padding: 1rem; border-radius: 8px; font-weight: bold; border-color: var(--card-border); color: var(--text-muted);">
+                <i class="fa-solid fa-user-check"></i> Presensi Kelas
+            </a>
+        </div>
+        
+        <h3 style="margin-bottom: 1rem;">Daftar Materi</h3>
+        <div class="materi-list" style="margin-bottom: 2rem;">
+            {% for item in contents %}
+            <div class="materi-item {% if forloop.first %}active{% endif %}">
+                <i class="fa-solid fa-circle-play"></i>
+                <div>
+                    <div style="font-size: 0.95rem;">{{ item.name }}</div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                Kosong
+            </div>
+            {% endfor %}
+        </div>
+
+        <h3 style="margin-bottom: 1rem;">Tugas (Assignments)</h3>
+        <div class="materi-list" style="margin-bottom: 2rem;">
+            {% for item in assignments %}
+            <a href="{% url 'assignment_detail' item.id %}" style="text-decoration: none; color: inherit;">
+                <div class="materi-item">
+                    <i class="fa-solid fa-file-pen"></i>
+                    <div>
+                        <div style="font-size: 0.95rem;">{{ item.title }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Tenggat: {{ item.deadline|date:"d M Y, H:i" }}</div>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                Belum ada tugas
+            </div>
+            {% endfor %}
+        </div>
+
+        <h3 style="margin-bottom: 1rem;">Kuis (Quizzes)</h3>
+        <div class="materi-list">
+            {% for item in quizzes %}
+            <a href="{% url 'quiz_detail' item.id %}" style="text-decoration: none; color: inherit;">
+                <div class="materi-item">
+                    <i class="fa-solid fa-clipboard-question"></i>
+                    <div>
+                        <div style="font-size: 0.95rem;">{{ item.title }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Tenggat: {{ item.deadline|date:"d M Y, H:i" }}</div>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div style="padding: 1rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                Belum ada kuis
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

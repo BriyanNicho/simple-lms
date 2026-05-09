@@ -1,0 +1,90 @@
+{% extends 'core/base.html' %}
+{% block title %}Kuis: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'learn_course' course.id %}" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">
+    <i class="fa-solid fa-arrow-left"></i> Kembali ke Materi
+</a>
+
+<div class="glass-panel" style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="margin-bottom: 0.5rem; font-size: 2rem;">{{ quiz.title }}</h1>
+            <p style="color: var(--text-muted);"><i class="fa-regular fa-clock"></i> Tenggat: {{ quiz.deadline|date:"d M Y, H:i" }}</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem;">Status</div>
+            {% if is_teacher %}
+                <span class="badge" style="background: var(--accent); color: white; padding: 0.3rem 0.6rem; border-radius: 4px;">Pengajar</span>
+            {% elif attempt %}
+                <span class="badge" style="background: #28a745; color: white; padding: 0.3rem 0.6rem; border-radius: 4px;">Selesai</span>
+            {% else %}
+                <span class="badge" style="background: #dc3545; color: white; padding: 0.3rem 0.6rem; border-radius: 4px;">Belum Dikerjakan</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if quiz.description %}
+    <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.05);">
+        <p style="line-height: 1.6; color: #ddd; margin: 0;">{{ quiz.description|linebreaksbr }}</p>
+    </div>
+    {% endif %}
+
+    {% if not is_teacher %}
+        {% if attempt %}
+            <div style="background: rgba(40,167,69,0.1); border: 1px solid rgba(40,167,69,0.3); padding: 2rem; border-radius: 12px; text-align: center;">
+                <i class="fa-solid fa-check-circle" style="font-size: 3rem; color: #28a745; margin-bottom: 1rem;"></i>
+                <h3 style="margin-bottom: 0.5rem;">Kuis Telah Diselesaikan</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Anda sudah mengerjakan kuis ini pada {{ attempt.attempted_at|date:"d M Y, H:i" }}.</p>
+                <div style="font-size: 1.2rem;">
+                    Nilai Anda: <strong style="font-size: 2rem; color: var(--accent); margin-left: 0.5rem;">{{ attempt.score }}</strong>
+                </div>
+            </div>
+        {% else %}
+            <form method="post">
+                {% csrf_field %}
+                <h3 style="margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Pertanyaan Kuis</h3>
+                
+                {% for question in questions %}
+                <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid var(--card-border);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <strong style="font-size: 1.1rem;">{{ forloop.counter }}. {{ question.text }}</strong>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">{{ question.points }} Poin</span>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                        {% for option in question.options.all %}
+                        <label style="display: flex; align-items: center; gap: 10px; padding: 0.8rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                            <input type="radio" name="question_{{ question.id }}" value="{{ option.id }}" required style="accent-color: var(--accent);">
+                            <span style="color: #ddd;">{{ option.text }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    Belum ada pertanyaan untuk kuis ini.
+                </div>
+                {% endfor %}
+                
+                {% if questions %}
+                <button type="submit" class="btn-primary" style="width: 100%; border: none; cursor: pointer; padding: 1rem; font-weight: bold; border-radius: 8px; font-size: 1.1rem; margin-top: 1rem;">
+                    <i class="fa-solid fa-check-double"></i> Kumpulkan Jawaban Kuis
+                </button>
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">Pastikan semua jawaban telah terisi sebelum mengumpulkan. Anda tidak dapat mengulang kuis ini.</p>
+                {% endif %}
+            </form>
+        {% endif %}
+    {% else %}
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--card-border); text-align: center;">
+            <p style="color: var(--text-muted);">Anda login sebagai Pengajar/Admin. <br>Gunakan panel admin untuk mengelola pertanyaan dan melihat nilai mahasiswa.</p>
+            <a href="{% url 'admin:core_quizattempt_changelist' %}?quiz__id__exact={{ quiz.id }}" target="_blank" class="btn-outline" style="display: inline-block; margin-top: 1rem;">
+                Lihat Hasil Kuis
+            </a>
+            <a href="{% url 'admin:core_quizquestion_changelist' %}?quiz__id__exact={{ quiz.id }}" target="_blank" class="btn-primary" style="display: inline-block; margin-top: 1rem; margin-left: 1rem; border: none; padding: 0.5rem 1.5rem;">
+                Kelola Pertanyaan
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

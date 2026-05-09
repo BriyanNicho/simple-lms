@@ -1,0 +1,94 @@
+{% extends 'core/base.html' %}
+{% block title %}Tugas: {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'learn_course' course.id %}" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">
+    <i class="fa-solid fa-arrow-left"></i> Kembali ke Materi
+</a>
+
+<div class="glass-panel" style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="margin-bottom: 0.5rem; font-size: 2rem;">{{ assignment.title }}</h1>
+            <p style="color: var(--text-muted);"><i class="fa-regular fa-clock"></i> Tenggat: {{ assignment.deadline|date:"d M Y, H:i" }}</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem;">Status</div>
+            {% if is_teacher %}
+                <span class="badge" style="background: var(--accent); color: white; padding: 0.3rem 0.6rem; border-radius: 4px;">Pengajar</span>
+            {% elif submission %}
+                <span class="badge" style="background: #28a745; color: white; padding: 0.3rem 0.6rem; border-radius: 4px;">Terkumpul</span>
+            {% else %}
+                <span class="badge" style="background: #dc3545; color: white; padding: 0.3rem 0.6rem; border-radius: 4px;">Belum Terkumpul</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(255,255,255,0.05);">
+        <h3 style="margin-bottom: 1rem; font-size: 1.2rem;">Deskripsi Tugas</h3>
+        <div style="line-height: 1.6; color: #ddd;">
+            {{ assignment.description|linebreaks }}
+        </div>
+        
+        {% if assignment.attachment %}
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
+            <p style="margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Lampiran dari Pengajar:</p>
+            <a href="{{ assignment.attachment.url }}" target="_blank" class="btn-outline" style="display: inline-block;">
+                <i class="fa-solid fa-download"></i> Unduh Lampiran
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not is_teacher %}
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--card-border);">
+            <h3 style="margin-bottom: 1rem;">Pengumpulan Tugas</h3>
+            
+            {% if submission %}
+                <div style="margin-bottom: 1rem;">
+                    <p style="color: var(--text-muted); margin-bottom: 0.5rem;">File Anda:</p>
+                    <a href="{{ submission.file.url }}" target="_blank" style="color: var(--accent); text-decoration: none;">
+                        <i class="fa-solid fa-file"></i> File Jawaban
+                    </a>
+                </div>
+                <div style="display: flex; gap: 2rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem;">Waktu Pengumpulan</p>
+                        <p>{{ submission.submitted_at|date:"d M Y, H:i" }} {% if submission.is_late %}<span style="color: #dc3545; font-size: 0.8rem;">(Terlambat)</span>{% endif %}</p>
+                    </div>
+                    <div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem;">Nilai</p>
+                        <p style="font-weight: bold; font-size: 1.2rem; color: {% if submission.grade %}var(--accent){% else %}var(--text-muted){% endif %};">
+                            {% if submission.grade %}{{ submission.grade }}/100{% else %}Belum Dinilai{% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% if submission.feedback %}
+                <div style="margin-top: 1rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--accent);">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.3rem;">Feedback Pengajar:</p>
+                    <p style="margin: 0; font-style: italic;">"{{ submission.feedback }}"</p>
+                </div>
+                {% endif %}
+            {% else %}
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_field %}
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="file" style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Unggah File Jawaban (PDF, DOCX, ZIP)</label>
+                        <input type="file" name="file" id="file" required style="width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); border-radius: 8px; color: #fff;">
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; border: none; cursor: pointer; padding: 1rem; font-weight: bold; border-radius: 8px;">
+                        <i class="fa-solid fa-paper-plane"></i> Kumpulkan Tugas
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    {% else %}
+        <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--card-border); text-align: center;">
+            <p style="color: var(--text-muted);">Anda login sebagai Pengajar/Admin. <br>Buka panel admin untuk melihat dan menilai pengumpulan tugas mahasiswa.</p>
+            <a href="{% url 'admin:core_assignmentsubmission_changelist' %}?assignment__id__exact={{ assignment.id }}" target="_blank" class="btn-outline" style="display: inline-block; margin-top: 1rem;">
+                Buka Admin Panel (Submissions)
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

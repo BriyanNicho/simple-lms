@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ course.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header { display: flex; gap: 3rem; background: var(--card-bg); border: 1px solid var(--card-border); padding: 3rem; border-radius: 20px; align-items: center; margin-bottom: 2rem; backdrop-filter: blur(16px); }
+    .detail-image { width: 300px; height: 300px; background: rgba(0,0,0,0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 5rem; color: rgba(255,255,255,0.1); flex-shrink: 0; }
+    .detail-info h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #fff; }
+    .detail-meta { display: flex; gap: 20px; margin-bottom: 1.5rem; color: var(--text-muted); font-size: 1.1rem; }
+    .detail-meta i { color: var(--accent); margin-right: 5px; }
+    .detail-price { font-size: 2rem; font-weight: 700; color: var(--secondary); margin-bottom: 2rem; }
+    .desc-box { background: rgba(0,0,0,0.2); padding: 2rem; border-radius: 16px; border: 1px solid var(--card-border); line-height: 1.8; color: var(--text-main); }
+    .btn-large { font-size: 1.2rem; padding: 15px 40px; display: inline-block; }
+    
+    @media (max-width: 768px) {
+        .detail-header { flex-direction: column; padding: 1.5rem; }
+        .detail-image { width: 100%; height: 200px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'home' %}" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;"><i class="fa-solid fa-arrow-left"></i> Kembali ke daftar kursus</a>
+
+<div class="detail-header">
+    <div class="detail-image"><i class="fa-solid fa-laptop-code"></i></div>
+    <div class="detail-info">
+        <span class="badge badge-{{ course.level }}" style="display:inline-block; padding: 5px 12px; border-radius:20px; font-weight:bold; text-transform:uppercase; font-size:0.8rem; margin-bottom:1rem; background:rgba(255,255,255,0.1); color:#fff;">{{ course.get_level_display }}</span>
+        <h1>{{ course.name }}</h1>
+        <div class="detail-meta">
+            <span><i class="fa-solid fa-chalkboard-user"></i> {{ course.teacher.username|title }}</span>
+            <span><i class="fa-solid fa-users"></i> {{ course.members.count }} Terdaftar</span>
+        </div>
+        <div class="detail-price">Rp {{ course.price }}</div>
+        
+        {% if is_enrolled or is_teacher_or_admin %}
+            <a href="{% url 'learn_course' course.id %}" class="btn-primary btn-large">
+                {% if is_teacher_or_admin %}Akses Materi Pengajar{% else %}Lanjutkan Belajar{% endif %} <i class="fa-solid fa-play"></i>
+            </a>
+        {% else %}
+            {% if user.is_authenticated %}
+                <form action="{% url 'enroll_course' course.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-primary btn-large">Daftar Sekarang</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn-primary btn-large">Login untuk Mendaftar</a>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<div class="desc-box">
+    <h3>Tentang Kursus Ini</h3>
+    <br>
+    <p>{{ course.description|linebreaks }}</p>
+</div>
+{% endblock %}

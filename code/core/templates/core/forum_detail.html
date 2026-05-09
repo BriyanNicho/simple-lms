@@ -1,0 +1,70 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ thread.title }} - Forum{% endblock %}
+
+{% block content %}
+<a href="{% url 'forum_list' course.id %}" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">
+    <i class="fa-solid fa-arrow-left"></i> Kembali ke Forum
+</a>
+
+<div class="glass-panel" style="padding: 2rem; max-width: 900px; margin: 0 auto;">
+    
+    <!-- Thread Utama -->
+    <div style="margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <h1 style="margin-bottom: 1rem; font-size: 2rem;">{{ thread.title }}</h1>
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                {{ thread.author.username|make_list|first|upper }}
+            </div>
+            <div>
+                <strong style="color: #fff;">{{ thread.author.username }}</strong>
+                {% if thread.author == course.teacher or thread.author.is_staff %}
+                    <span style="background: rgba(255,255,255,0.1); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem; margin-left: 0.3rem;">Pengajar</span>
+                {% endif %}
+                <br>
+                <span>{{ thread.created_at|date:"d M Y, H:i" }}</span>
+            </div>
+        </div>
+        <div style="line-height: 1.7; color: #eee; font-size: 1.05rem;">
+            {{ thread.content|linebreaks }}
+        </div>
+    </div>
+
+    <!-- Balasan -->
+    <h3 style="margin-bottom: 1.5rem;">{{ replies.count }} Balasan</h3>
+    <div style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
+        {% for reply in replies %}
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; {% if reply.author == course.teacher %}border-left: 3px solid var(--accent);{% endif %}">
+            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: {% if reply.author == course.teacher %}var(--accent){% else %}#555{% endif %}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8rem;">
+                    {{ reply.author.username|make_list|first|upper }}
+                </div>
+                <div>
+                    <strong style="color: #fff;">{{ reply.author.username }}</strong>
+                    {% if reply.author == course.teacher or reply.author.is_staff %}
+                        <span style="background: rgba(255,255,255,0.1); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem; margin-left: 0.3rem; color: var(--accent);">Pengajar</span>
+                    {% endif %}
+                    <span style="margin-left: 0.5rem;">• {{ reply.created_at|date:"d M Y, H:i" }}</span>
+                </div>
+            </div>
+            <div style="line-height: 1.6; color: #ddd; padding-left: calc(28px + 0.8rem);">
+                {{ reply.content|linebreaks }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Form Balasan -->
+    <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--card-border);">
+        <form method="post">
+            {% csrf_field %}
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted);">Tulis Balasan</label>
+                <textarea name="content" required rows="3" placeholder="Tambahkan tanggapan Anda..." style="width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); border-radius: 8px; color: #fff; resize: vertical;"></textarea>
+            </div>
+            <button type="submit" class="btn-primary" style="cursor: pointer; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold;">
+                <i class="fa-solid fa-reply"></i> Kirim Balasan
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

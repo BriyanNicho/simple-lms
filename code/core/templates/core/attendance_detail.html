@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+{% block title %}Rekap Presensi: {{ session.title }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'attendance_list' course.id %}" style="color: var(--text-muted); text-decoration: none; display: inline-block; margin-bottom: 1rem;">
+    <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar Presensi
+</a>
+
+<div class="glass-panel" style="padding: 2rem; max-width: 900px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <h1 style="margin-bottom: 0.5rem; font-size: 2rem;">Rekap Kehadiran: {{ session.title }}</h1>
+        <p style="color: var(--text-muted); margin: 0; font-size: 1.1rem;">
+            <i class="fa-regular fa-calendar"></i> {{ session.date|date:"d M Y" }} &nbsp;|&nbsp;
+            <i class="fa-regular fa-clock"></i> {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+        </p>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 2px solid rgba(255,255,255,0.1); color: var(--text-muted);">
+                    <th style="padding: 1rem;">No</th>
+                    <th style="padding: 1rem;">Mahasiswa</th>
+                    <th style="padding: 1rem;">Status</th>
+                    <th style="padding: 1rem;">Waktu Presensi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in attendance_data %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 1rem;">{{ forloop.counter }}</td>
+                    <td style="padding: 1rem; color: #fff; font-weight: bold;">{{ item.student.username }}</td>
+                    <td style="padding: 1rem;">
+                        {% if item.status == 'Hadir' %}
+                            <span style="color: #28a745; background: rgba(40,167,69,0.1); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;"><i class="fa-solid fa-check"></i> Hadir</span>
+                        {% elif item.status == 'Terlambat' %}
+                            <span style="color: #ffc107; background: rgba(255,193,7,0.1); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;"><i class="fa-solid fa-clock"></i> Terlambat</span>
+                        {% else %}
+                            <span style="color: #dc3545; background: rgba(220,53,69,0.1); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.85rem;"><i class="fa-solid fa-xmark"></i> Alpa</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem; color: var(--text-muted);">
+                        {% if item.time %}{{ item.time|date:"H:i:s" }}{% else %}-{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">Tidak ada mahasiswa yang terdaftar di kursus ini.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
