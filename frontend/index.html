@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple LMS Dashboard</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous" />
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --surface: #f8f9ff;
+    }
+
+    body {
+      background-color: var(--surface);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* ── Navbar ── */
+    .navbar-brand span {
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .navbar { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+
+    /* ── Summary Cards ── */
+    .stat-card {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(79, 70, 229, .12);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(79, 70, 229, .18); }
+    .stat-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+    }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: #1e1b4b; }
+    .stat-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
+
+    /* ── Section heading ── */
+    .section-title { font-weight: 700; color: #1e1b4b; }
+
+    /* ── Course cards ── */
+    .course-card {
+      border: none;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07);
+      transition: transform .2s, box-shadow .2s;
+      height: 100%;
+    }
+    .course-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+    .course-card .card-header {
+      border-radius: 14px 14px 0 0 !important;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      font-weight: 600;
+    }
+    .price-badge {
+      background: #ede9fe; color: #4f46e5;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: .8rem; font-weight: 600;
+    }
+    .teacher-chip {
+      background: #f0fdf4; color: #15803d;
+      padding: 2px 10px; border-radius: 20px;
+      font-size: .78rem;
+    }
+
+    /* ── Loading skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* ── Utility ── */
+    .text-indigo { color: var(--primary) !important; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ NAVBAR ═══════════ -->
+<nav class="navbar navbar-dark py-3 shadow-sm mb-4">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+      <i class="fa-solid fa-graduation-cap fa-lg"></i>
+      <span>Simple LMS Dashboard</span>
+    </a>
+    <button id="btnRefresh" class="btn btn-outline-light btn-sm d-flex align-items-center gap-2" onclick="loadAll()">
+      <i class="fa-solid fa-rotate-right"></i> Refresh
+    </button>
+  </div>
+</nav>
+
+<div class="container pb-5">
+
+  <!-- ═══════════ ALERT AREA ═══════════ -->
+  <div id="alertArea"></div>
+
+  <!-- ═══════════ SUMMARY CARDS ═══════════ -->
+  <div class="row g-3 mb-5" id="summaryCards">
+  <!-- JS will populate cards here -->
+    <div class="col-sm-6 col-xl-3"><div class="skeleton" style="height:110px"></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="skeleton" style="height:110px"></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="skeleton" style="height:110px"></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="skeleton" style="height:110px"></div></div>
+  </div>
+
+  <!-- ═══════════ COURSE LIST ═══════════ -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="section-title mb-0"><i class="fa-solid fa-book-open me-2 text-indigo"></i>Daftar Mata Kuliah</h5>
+    <span id="courseBadge" class="badge bg-indigo" style="background:var(--primary)!important">–</span>
+  </div>
+
+  <!-- Search box -->
+  <div class="mb-3">
+    <div class="input-group" style="max-width:320px">
+      <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+      <input id="searchInput" type="text" class="form-control border-start-0 ps-0"
+             placeholder="Cari mata kuliah..." oninput="filterCourses()" />
+    </div>
+  </div>
+
+  <div id="courseGrid" class="row g-3">
+    <!-- skeleton placeholders -->
+    <div class="col-md-6 col-lg-4"><div class="skeleton" style="height:180px"></div></div>
+    <div class="col-md-6 col-lg-4"><div class="skeleton" style="height:180px"></div></div>
+    <div class="col-md-6 col-lg-4"><div class="skeleton" style="height:180px"></div></div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmcJ3dMTPbMaDVaz8C7pycE9Os/l"
+        crossorigin="anonymous"></script>
+
+<script>
+  /* ═══════════════════════════════════════════════
+     CONFIG — change BASE_URL to match your server.
+     Defaults to same host (production-friendly);
+     override by appending ?api=http://host:port
+  ═══════════════════════════════════════════════ */
+  const params  = new URLSearchParams(window.location.search);
+  const BASE_URL = params.get('api') || 'http://localhost:8001';
+
+  const API = {
+    allCourse:  `${BASE_URL}/api/all-course/`,
+    courseStat: `${BASE_URL}/course-stat/`,
+    userStat:   `${BASE_URL}/stats/`,
+  };
+
+  /* global course cache for filtering */
+  let allCoursesCache = [];
+
+  /* ═══════════════════════════════════════════════
+     HELPERS
+  ═══════════════════════════════════════════════ */
+  function formatRupiah(amount) {
+    if (amount == null) return '–';
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+  }
+
+  function showAlert(message, type = 'warning') {
+    const area = document.getElementById('alertArea');
+    area.innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show d-flex align-items-center gap-2" role="alert">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div>${message}</div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+      </div>`;
+  }
+
+  async function safeFetch(url) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      showAlert(`Gagal mengambil data dari <code>${url}</code>: ${err.message}. Pastikan server berjalan di <strong>${BASE_URL}</strong>.`);
+      return null;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════
+     SUMMARY CARDS
+  ═══════════════════════════════════════════════ */
+  function buildSummaryCards(courseStat, userStat) {
+    const courseCount   = courseStat?.course_count ?? '–';
+    const avgPrice      = courseStat?.courses?.avg_price ?? null;
+    const totalUsers    = userStat?.total_non_admin_users ?? '–';
+    const topUser       = userStat?.top_user?.username ?? '–';
+    const topUserCourses = userStat?.top_user?.total_courses ?? '';
+
+    const cards = [
+      {
+        icon: 'fa-book',
+        color: '#ede9fe', iconColor: '#7c3aed',
+        label: 'Total Mata Kuliah',
+        value: courseCount,
+        sub: 'kursus tersedia',
+      },
+      {
+        icon: 'fa-tag',
+        color: '#dbeafe', iconColor: '#2563eb',
+        label: 'Rata-rata Harga',
+        value: formatRupiah(avgPrice),
+        sub: `Min: ${formatRupiah(courseStat?.courses?.min_price)} | Max: ${formatRupiah(courseStat?.courses?.max_price)}`,
+      },
+      {
+        icon: 'fa-users',
+        color: '#dcfce7', iconColor: '#16a34a',
+        label: 'Total User',
+        value: totalUsers,
+        sub: 'pengguna terdaftar',
+      },
+      {
+        icon: 'fa-star',
+        color: '#fef9c3', iconColor: '#ca8a04',
+        label: 'Top Pengajar',
+        value: topUser,
+        sub: topUserCourses ? `${topUserCourses} mata kuliah` : 'paling banyak kursus',
+      },
+    ];
+
+    const html = cards.map(c => `
+      <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card p-3">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="stat-icon" style="background:${c.color}; color:${c.iconColor}">
+              <i class="fa-solid ${c.icon}"></i>
+            </div>
+            <div>
+              <div class="stat-label">${c.label}</div>
+              <div class="stat-value">${c.value}</div>
+            </div>
+          </div>
+          <div class="text-muted" style="font-size:.78rem">${c.sub}</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('summaryCards').innerHTML = html;
+  }
+
+  /* ═══════════════════════════════════════════════
+     COURSE GRID
+  ═══════════════════════════════════════════════ */
+  function renderCourseGrid(courses) {
+    const grid = document.getElementById('courseGrid');
+
+    if (!courses || courses.length === 0) {
+      grid.innerHTML = `<div class="col-12 text-center text-muted py-5">
+        <i class="fa-solid fa-circle-info fa-2x mb-2"></i><p>Tidak ada data mata kuliah.</p></div>`;
+      return;
+    }
+
+    document.getElementById('courseBadge').textContent = `${courses.length} kursus`;
+
+    grid.innerHTML = courses.map(c => {
+      /* Django serializer wraps fields inside .fields */
+      const fields = c.fields ?? c;
+      const name        = fields.name        ?? '(tanpa nama)';
+      const description = fields.description ?? '';
+      const price       = fields.price       ?? null;
+      const teacherId   = fields.teacher     ?? '–';
+
+      /* Teacher field may be an FK integer ID or a nested object */
+      const teacherLabel = typeof teacherId === 'object' && teacherId !== null
+        ? (teacherId.username ?? teacherId.name ?? 'Pengajar')
+        : `Pengajar #${teacherId}`;
+
+      /* Short description */
+      const shortDesc = description && description !== '-'
+        ? (description.length > 90 ? description.slice(0, 90) + '…' : description)
+        : '<span class="text-muted fst-italic">Tidak ada deskripsi</span>';
+
+      return `
+        <div class="col-md-6 col-lg-4 course-item">
+          <div class="card course-card">
+            <div class="card-header d-flex justify-content-between align-items-start">
+              <span class="me-2">${escapeHtml(name)}</span>
+              <span class="price-badge flex-shrink-0">${formatRupiah(price)}</span>
+            </div>
+            <div class="card-body d-flex flex-column gap-2">
+              <p class="card-text text-muted mb-0" style="font-size:.88rem">${shortDesc}</p>
+              <div class="mt-auto pt-2 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-chalkboard-user text-muted" style="font-size:.85rem"></i>
+                <span class="teacher-chip">${escapeHtml(String(teacherLabel))}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function filterCourses() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    if (!q) { renderCourseGrid(allCoursesCache); return; }
+
+    const filtered = allCoursesCache.filter(c => {
+      const f = c.fields ?? c;
+      return (f.name ?? '').toLowerCase().includes(q) ||
+             (f.description ?? '').toLowerCase().includes(q);
+    });
+    renderCourseGrid(filtered);
+  }
+
+  /* ═══════════════════════════════════════════════
+     XSS-safe HTML escape
+  ═══════════════════════════════════════════════ */
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /* ═══════════════════════════════════════════════
+     MAIN LOAD
+  ═══════════════════════════════════════════════ */
+  async function loadAll() {
+    document.getElementById('alertArea').innerHTML = '';
+
+    /* Skeleton state */
+    document.getElementById('summaryCards').innerHTML = Array(4).fill(
+      `<div class="col-sm-6 col-xl-3"><div class="skeleton" style="height:110px"></div></div>`
+    ).join('');
+    document.getElementById('courseGrid').innerHTML = Array(3).fill(
+      `<div class="col-md-6 col-lg-4"><div class="skeleton" style="height:180px"></div></div>`
+    ).join('');
+    document.getElementById('courseBadge').textContent = '–';
+
+    /* Parallel fetch */
+    const [courseStatData, userStatData, allCourseData] = await Promise.all([
+      safeFetch(API.courseStat),
+      safeFetch(API.userStat),
+      safeFetch(API.allCourse),
+    ]);
+
+    buildSummaryCards(courseStatData, userStatData);
+
+    if (allCourseData) {
+      allCoursesCache = allCourseData.courses ?? [];
+      renderCourseGrid(allCoursesCache);
+    }
+  }
+
+  /* Boot */
+  loadAll();
+</script>
+
+</body>
+</html>
